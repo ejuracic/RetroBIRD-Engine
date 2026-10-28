@@ -118,7 +118,11 @@ endif
 GENERATED :=
 OBJECTS :=
 
+GENERATED += $(OBJDIR)/Bird.o
+GENERATED += $(OBJDIR)/FlightCamera.o
 GENERATED += $(OBJDIR)/main.o
+OBJECTS += $(OBJDIR)/Bird.o
+OBJECTS += $(OBJDIR)/FlightCamera.o
 OBJECTS += $(OBJDIR)/main.o
 
 # Rules
@@ -183,6 +187,12 @@ endif
 # File Rules
 # #############################################
 
+$(OBJDIR)/Bird.o: src/Bird.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/FlightCamera.o: src/FlightCamera.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/main.o: src/main.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
