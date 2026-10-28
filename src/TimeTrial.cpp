@@ -1,5 +1,11 @@
-
 #include "TimeTrial.h"
+
+namespace
+{
+    constexpr float kGoldTime = 22.0f;
+    constexpr float kSilverTime = 30.0f;
+    constexpr float kBronzeTime = 45.0f;
+}
 
 // Name: TimeTrial
 // Description: Creates the initial time trial course
@@ -7,7 +13,6 @@
 // Returns: None
 TimeTrial::TimeTrial()
 {
-    // Create four checkpoints along the flight path
     checkpoints_.emplace_back(
         Vector3{ 0.0f, 5.0f, -20.0f }, 3.0f
     );
@@ -26,7 +31,7 @@ TimeTrial::TimeTrial()
 }
 
 // Name: Update
-// Description: Updates timer and checkpoint progression
+// Description: Updates timing and checkpoint progression
 // Parameters: deltaTime, previousPosition, currentPosition
 // Returns: None
 void TimeTrial::Update(
@@ -34,16 +39,15 @@ void TimeTrial::Update(
     Vector3 previousPosition,
     Vector3 currentPosition)
 {
-    // Stop updating once the trial finishes
     if (finished_)
     {
         return;
     }
 
-    // Update elapsed time
+    // Update the race timer
     elapsedTime_ += deltaTime;
 
-    // Check only the next required checkpoint
+    // Check the next required checkpoint
     if (currentCheckpoint_ < checkpoints_.size())
     {
         const Checkpoint& checkpoint =
@@ -57,15 +61,22 @@ void TimeTrial::Update(
         }
     }
 
-    // Determine whether all checkpoints are complete
+    // Check whether the race is complete
     if (currentCheckpoint_ >= checkpoints_.size())
     {
         finished_ = true;
+
+        // Record a new personal best
+        if (bestTime_ < 0.0f ||
+            elapsedTime_ < bestTime_)
+        {
+            bestTime_ = elapsedTime_;
+        }
     }
 }
 
 // Name: Draw
-// Description: Draws remaining checkpoint rings
+// Description: Draws the remaining checkpoints
 // Parameters: None
 // Returns: None
 void TimeTrial::Draw() const
@@ -79,7 +90,7 @@ void TimeTrial::Draw() const
 }
 
 // Name: Reset
-// Description: Restarts the time trial
+// Description: Resets the current attempt
 // Parameters: None
 // Returns: None
 void TimeTrial::Reset()
@@ -87,21 +98,50 @@ void TimeTrial::Reset()
     currentCheckpoint_ = 0;
     elapsedTime_ = 0.0f;
     finished_ = false;
+
+    // Best time is intentionally preserved
 }
 
 // Name: GetElapsedTime
-// Description: Returns the time trial duration
+// Description: Returns the current race time
 // Parameters: None
-// Returns: Elapsed time in seconds
+// Returns: Elapsed seconds
 float TimeTrial::GetElapsedTime() const
 {
     return elapsedTime_;
 }
 
+// Name: GetBestTime
+// Description: Returns the fastest completed race time
+// Parameters: None
+// Returns: Best time in seconds or -1
+float TimeTrial::GetBestTime() const
+{
+    return bestTime_;
+}
+
+// Name: HasBestTime
+// Description: Checks whether a best time exists
+// Parameters: None
+// Returns: True when a completed time is recorded
+bool TimeTrial::HasBestTime() const
+{
+    return bestTime_ >= 0.0f;
+}
+
+// Name: IsFinished
+// Description: Checks whether the race is complete
+// Parameters: None
+// Returns: True when all checkpoints are passed
+bool TimeTrial::IsFinished() const
+{
+    return finished_;
+}
+
 // Name: GetPassedCount
 // Description: Returns completed checkpoint count
 // Parameters: None
-// Returns: Number of completed checkpoints
+// Returns: Completed checkpoints
 std::size_t TimeTrial::GetPassedCount() const
 {
     return currentCheckpoint_;
@@ -110,17 +150,37 @@ std::size_t TimeTrial::GetPassedCount() const
 // Name: GetTotalCount
 // Description: Returns total checkpoint count
 // Parameters: None
-// Returns: Number of checkpoints
+// Returns: Total checkpoints
 std::size_t TimeTrial::GetTotalCount() const
 {
     return checkpoints_.size();
 }
 
-// Name: IsFinished
-// Description: Reports whether the trial is complete
+// Name: GetMedal
+// Description: Determines the medal earned for a race
 // Parameters: None
-// Returns: True when all checkpoints are passed
-bool TimeTrial::IsFinished() const
+// Returns: TrialMedal
+TrialMedal TimeTrial::GetMedal() const
 {
-    return finished_;
+    if (!finished_)
+    {
+        return TrialMedal::None;
+    }
+
+    if (elapsedTime_ <= kGoldTime)
+    {
+        return TrialMedal::Gold;
+    }
+
+    if (elapsedTime_ <= kSilverTime)
+    {
+        return TrialMedal::Silver;
+    }
+
+    if (elapsedTime_ <= kBronzeTime)
+    {
+        return TrialMedal::Bronze;
+    }
+
+    return TrialMedal::None;
 }

@@ -42,7 +42,7 @@ int main()
         // Record position before movement
         Vector3 previousPosition = playerBird.GetPosition();
 
-        // Update game systems while racing
+        // Update game systems
         if (!timeTrial.IsFinished())
         {
             playerBird.Update(deltaTime, input);
@@ -54,7 +54,6 @@ int main()
             );
         }
 
-        // Update camera
         flightCamera.Update(playerBird);
 
         // Begin rendering
@@ -63,18 +62,13 @@ int main()
 
         BeginMode3D(flightCamera.GetCamera());
 
-        // Render the environment
         DrawGrid(150, 1.0f);
-
-        // Render the bird
         playerBird.Draw();
-
-        // Render the checkpoint course
         timeTrial.Draw();
 
         EndMode3D();
 
-        // Draw game interface
+        // Draw HUD
         DrawText(
             "RetroBIRD Engine",
             20, 20, 20, BLACK
@@ -102,21 +96,79 @@ int main()
             20, 115, 22, BLACK
         );
 
+        // Display personal best
+        if (timeTrial.HasBestTime())
+        {
+            DrawText(
+                TextFormat(
+                    "Best (session): %.2f seconds",
+                    timeTrial.GetBestTime()
+                ),
+                20, 145, 20, DARKBLUE
+            );
+        }
+        else
+        {
+            DrawText(
+                "Best (session): --",
+                20, 145, 20, DARKBLUE
+            );
+        }
+
+        DrawText(
+            "Gold: 22s | Silver: 30s | Bronze: 45s",
+            20, 175, 18, DARKGRAY
+        );
+
         // Display race completion
         if (timeTrial.IsFinished())
         {
+            const char* medalText = "No Medal";
+            Color medalColor = DARKGRAY;
+
+            switch (timeTrial.GetMedal())
+            {
+                case TrialMedal::Gold:
+                    medalText = "GOLD MEDAL!";
+                    medalColor = GOLD;
+                    break;
+
+                case TrialMedal::Silver:
+                    medalText = "SILVER MEDAL!";
+                    medalColor = GRAY;
+                    break;
+
+                case TrialMedal::Bronze:
+                    medalText = "BRONZE MEDAL!";
+                    medalColor = BROWN;
+                    break;
+
+                case TrialMedal::None:
+                    break;
+            }
+
+            DrawRectangle(
+                235, 235, 490, 160,
+                Fade(RAYWHITE, 0.90f)
+            );
+
             DrawText(
                 "TIME TRIAL COMPLETE!",
-                280, 190, 30, DARKGREEN
+                275, 250, 30, DARKGREEN
+            );
+
+            DrawText(
+                medalText,
+                345, 300, 28, medalColor
             );
 
             DrawText(
                 "Press R to race again",
-                330, 240, 20, BLACK
+                340, 350, 20, BLACK
             );
         }
 
-        DrawFPS(10, 155);
+        DrawFPS(10, 210);
 
         EndDrawing();
     }
