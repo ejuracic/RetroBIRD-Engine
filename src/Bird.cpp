@@ -12,21 +12,24 @@ namespace
     constexpr float kMaxPitch = 0.75f;
     constexpr float kMaxBankAngle = 25.0f;
     constexpr float kBankSmoothing = 5.0f;
+
+    constexpr float kWingFlapSpeed = 7.0f;
+    constexpr float kWingFlapAmplitude = 25.0f;
 }
 
 // Name: Update
-// Description: Updates bird movement and flight orientation
+// Description: Updates bird movement and animation
 // Parameters: deltaTime, input
 // Returns: None
 void Bird::Update(float deltaTime, const FlightInput& input)
 {
-    // Update flight angles
+    // Update horizontal and vertical rotation
     yaw_ += input.turn * kTurnSpeed * deltaTime;
 
     pitch_ += input.pitch * kTurnSpeed * deltaTime;
     pitch_ = std::clamp(pitch_, -kMaxPitch, kMaxPitch);
 
-    // Calculate visual banking
+    // Calculate banking
     float targetBank = -input.turn * kMaxBankAngle;
 
     float blend = std::clamp(
@@ -42,60 +45,46 @@ void Bird::Update(float deltaTime, const FlightInput& input)
         -std::cos(yaw_) * std::cos(pitch_)
     };
 
-    // Move forward
+    // Update position
     position_.x += forward_.x * kFlightSpeed * deltaTime;
     position_.y += forward_.y * kFlightSpeed * deltaTime;
     position_.z += forward_.z * kFlightSpeed * deltaTime;
 
-    // Prevent movement below ground
+    // Prevent flight below the ground
     position_.y = std::max(position_.y, 0.5f);
+
+    // Update wing animation
+    wingPhase_ += kWingFlapSpeed * deltaTime;
 }
 
 // Name: Draw
-// Description: Renders the bird's temporary 3D representation
+// Description: Draws the oriented procedural bird
 // Parameters: None
 // Returns: None
 void Bird::Draw() const
 {
+    // Calculate current wing position
+    float wingAngle =
+        std::sin(wingPhase_) * kWingFlapAmplitude;
+
     rlPushMatrix();
 
+    // Apply world position
     rlTranslatef(position_.x, position_.y, position_.z);
 
+    // Apply orientation
     rlRotatef(-yaw_ * RAD2DEG, 0.0f, 1.0f, 0.0f);
     rlRotatef(pitch_ * RAD2DEG, 1.0f, 0.0f, 0.0f);
     rlRotatef(bankAngle_, 0.0f, 0.0f, 1.0f);
 
-    // Temporary bird body
-    DrawCube(
-        { 0.0f, 0.0f, 0.0f },
-        1.2f, 0.5f, 2.0f,
-        RED
-    );
-
-    DrawCubeWires(
-        { 0.0f, 0.0f, 0.0f },
-        1.2f, 0.5f, 2.0f,
-        BLACK
-    );
-
-    // Forward direction indicator
-    DrawLine3D(
-        { 0.0f, 0.0f, 0.0f },
-        { 0.0f, 0.0f, -2.0f },
-        GREEN
-    );
-
-    DrawSphere(
-        { 0.0f, 0.0f, -2.0f },
-        0.12f,
-        GREEN
-    );
+    // Render procedural geometry
+    mesh_.Draw(wingAngle);
 
     rlPopMatrix();
 }
 
 // Name: GetPosition
-// Description: Returns the bird's position
+// Description: Returns bird position
 // Parameters: None
 // Returns: Vector3 position
 Vector3 Bird::GetPosition() const
@@ -104,7 +93,7 @@ Vector3 Bird::GetPosition() const
 }
 
 // Name: GetForward
-// Description: Returns the bird's forward direction
+// Description: Returns forward flight direction
 // Parameters: None
 // Returns: Vector3 direction
 Vector3 Bird::GetForward() const
