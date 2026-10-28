@@ -120,10 +120,12 @@ OBJECTS :=
 
 GENERATED += $(OBJDIR)/Bird.o
 GENERATED += $(OBJDIR)/BirdMesh.o
+GENERATED += $(OBJDIR)/Checkpoint.o
 GENERATED += $(OBJDIR)/FlightCamera.o
 GENERATED += $(OBJDIR)/main.o
 OBJECTS += $(OBJDIR)/Bird.o
 OBJECTS += $(OBJDIR)/BirdMesh.o
+OBJECTS += $(OBJDIR)/Checkpoint.o
 OBJECTS += $(OBJDIR)/FlightCamera.o
 OBJECTS += $(OBJDIR)/main.o
 
@@ -193,6 +195,9 @@ $(OBJDIR)/Bird.o: src/Bird.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/BirdMesh.o: src/BirdMesh.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/Checkpoint.o: src/Checkpoint.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/FlightCamera.o: src/FlightCamera.cpp
