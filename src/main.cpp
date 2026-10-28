@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include <cmath>
 
 int main()
 {
@@ -9,73 +10,125 @@ int main()
     InitWindow(screenWidth, screenHeight, "RetroBIRD Engine");
     SetTargetFPS(60);
 
-    // Configure the 3D camera
+    // Initialize the 3D camera
     Camera3D camera = {};
-    camera.position = { 8.0f, 8.0f, 12.0f };
-    camera.target = { 0.0f, 0.0f, 0.0f };
     camera.up = { 0.0f, 1.0f, 0.0f };
-    camera.fovy = 45.0f;
+    camera.fovy = 60.0f;
     camera.projection = CAMERA_PERSPECTIVE;
 
-    // Create our temporary bird object
-    Vector3 birdPosition = { 0.0f, 0.5f, 0.0f };
+    // Initialize the bird's position
+    Vector3 birdPosition = { 0.0f, 5.0f, 0.0f };
+
+    // Initialize flight variables
+    float yaw = 0.0f;
+    float pitch = 0.0f;
+
+    const float flightSpeed = 6.0f;
+    const float turnSpeed = 1.5f;
 
     // Main game loop
     while (!WindowShouldClose())
     {
-        // Calculate movement using frame time
-        float speed = 5.0f * GetFrameTime();
+        float deltaTime = GetFrameTime();
 
-		// Handle keyboard movement
-		if (IsKeyDown(KEY_W)) birdPosition.z -= speed;
-		if (IsKeyDown(KEY_S)) birdPosition.z += speed;
-		if (IsKeyDown(KEY_A)) birdPosition.x -= speed;
-		if (IsKeyDown(KEY_D)) birdPosition.x += speed;
+        // Update horizontal turning
+        if (IsKeyDown(KEY_A))
+        {
+            yaw -= turnSpeed * deltaTime;
+        }
 
-		// Handle vertical movement
-		if (IsKeyDown(KEY_SPACE)) birdPosition.y += speed;
-		if (IsKeyDown(KEY_LEFT_CONTROL)) birdPosition.y -= speed;
+        if (IsKeyDown(KEY_D))
+        {
+            yaw += turnSpeed * deltaTime;
+        }
 
-		// Prevent the bird from going below the ground
-		if (birdPosition.y < 0.5f)
-		{
-			birdPosition.y = 0.5f;
-		}
+        // Update vertical turning
+        if (IsKeyDown(KEY_W))
+        {
+            pitch += turnSpeed * deltaTime;
+        }
 
-		// Update the camera to follow the bird
-		camera.target = birdPosition;
+        if (IsKeyDown(KEY_S))
+        {
+            pitch -= turnSpeed * deltaTime;
+        }
 
-		camera.position = {
-			birdPosition.x + 8.0f,
-			birdPosition.y + 8.0f,
-			birdPosition.z + 12.0f
-		};
+        // Limit the vertical flight angle
+        if (pitch > 0.75f) pitch = 0.75f;
+        if (pitch < -0.75f) pitch = -0.75f;
+
+        // Calculate forward direction
+        Vector3 forward = {
+            std::sin(yaw) * std::cos(pitch),
+            std::sin(pitch),
+            -std::cos(yaw) * std::cos(pitch)
+        };
+
+        // Move the bird forward automatically
+        birdPosition.x += forward.x * flightSpeed * deltaTime;
+        birdPosition.y += forward.y * flightSpeed * deltaTime;
+        birdPosition.z += forward.z * flightSpeed * deltaTime;
+
+        // Prevent the bird from entering the ground
+        if (birdPosition.y < 0.5f)
+        {
+            birdPosition.y = 0.5f;
+        }
+
+        // Position the camera behind the bird
+        camera.position = {
+            birdPosition.x - forward.x * 9.0f,
+            birdPosition.y + 3.0f - forward.y * 9.0f,
+            birdPosition.z - forward.z * 9.0f
+        };
+
+        // Keep the camera above the ground
+        if (camera.position.y < 1.5f)
+        {
+            camera.position.y = 1.5f;
+        }
+
+        // Look slightly ahead of the bird
+        camera.target = {
+            birdPosition.x + forward.x * 3.0f,
+            birdPosition.y + forward.y * 3.0f,
+            birdPosition.z + forward.z * 3.0f
+        };
 
         // Begin rendering
         BeginDrawing();
         ClearBackground(SKYBLUE);
 
-        // Render the 3D world
         BeginMode3D(camera);
 
-        DrawGrid(20, 1.0f);
+        // Draw the environment
+        DrawGrid(100, 1.0f);
+
+        // Draw the temporary bird
         DrawCube(birdPosition, 1.0f, 1.0f, 1.0f, RED);
         DrawCubeWires(birdPosition, 1.0f, 1.0f, 1.0f, BLACK);
 
+        // Draw a green indicator for forward direction
+        Vector3 nosePosition = {
+            birdPosition.x + forward.x * 2.0f,
+            birdPosition.y + forward.y * 2.0f,
+            birdPosition.z + forward.z * 2.0f
+        };
+
+        DrawLine3D(birdPosition, nosePosition, GREEN);
+        DrawSphere(nosePosition, 0.12f, GREEN);
+
         EndMode3D();
 
-        // Render the 2D interface
+        // Draw interface
         DrawText("RetroBIRD Engine", 20, 20, 20, BLACK);
-		DrawText("WASD: Move", 20, 50, 18, DARKGRAY);
-		DrawText("SPACE: Ascend", 20, 75, 18, DARKGRAY);
-		DrawText("LEFT CTRL: Descend", 20, 100, 18, DARKGRAY);
-        DrawFPS(10, 80);
+        DrawText("W/S: Pitch", 20, 50, 18, DARKGRAY);
+        DrawText("A/D: Turn", 20, 75, 18, DARKGRAY);
+        DrawFPS(10, 105);
 
         EndDrawing();
     }
 
-    // Shut down the application
     CloseWindow();
-
     return 0;
 }
