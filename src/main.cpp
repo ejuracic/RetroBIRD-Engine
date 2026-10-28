@@ -1,4 +1,6 @@
+
 #include "raylib.h"
+#include "rlgl.h"
 #include <cmath>
 
 int main()
@@ -22,6 +24,7 @@ int main()
     // Initialize flight variables
     float yaw = 0.0f;
     float pitch = 0.0f;
+    float bankAngle = 0.0f;
 
     const float flightSpeed = 6.0f;
     const float turnSpeed = 1.5f;
@@ -56,6 +59,29 @@ int main()
         // Limit the vertical flight angle
         if (pitch > 0.75f) pitch = 0.75f;
         if (pitch < -0.75f) pitch = -0.75f;
+
+        // Determine the desired banking angle
+        float targetBank = 0.0f;
+
+        if (IsKeyDown(KEY_A))
+        {
+            targetBank = 25.0f;
+        }
+
+        if (IsKeyDown(KEY_D))
+        {
+            targetBank = -25.0f;
+        }
+
+        // Smoothly transition toward the desired bank angle
+        float bankBlend = 5.0f * deltaTime;
+
+        if (bankBlend > 1.0f)
+        {
+            bankBlend = 1.0f;
+        }
+
+        bankAngle += (targetBank - bankAngle) * bankBlend;
 
         // Calculate forward direction
         Vector3 forward = {
@@ -99,28 +125,64 @@ int main()
         BeginDrawing();
         ClearBackground(SKYBLUE);
 
+        // Begin rendering the 3D world
         BeginMode3D(camera);
 
         // Draw the environment
         DrawGrid(100, 1.0f);
 
-        // Draw the temporary bird
-        DrawCube(birdPosition, 1.0f, 1.0f, 1.0f, RED);
-        DrawCubeWires(birdPosition, 1.0f, 1.0f, 1.0f, BLACK);
+        // Save the current transformation
+        rlPushMatrix();
 
-        // Draw a green indicator for forward direction
-        Vector3 nosePosition = {
-            birdPosition.x + forward.x * 2.0f,
-            birdPosition.y + forward.y * 2.0f,
-            birdPosition.z + forward.z * 2.0f
-        };
+        // Move the bird to its world position
+        rlTranslatef(
+            birdPosition.x,
+            birdPosition.y,
+            birdPosition.z
+        );
 
-        DrawLine3D(birdPosition, nosePosition, GREEN);
-        DrawSphere(nosePosition, 0.12f, GREEN);
+        // Apply horizontal rotation
+        rlRotatef(-yaw * RAD2DEG, 0.0f, 1.0f, 0.0f);
 
+        // Apply vertical rotation
+        rlRotatef(pitch * RAD2DEG, 1.0f, 0.0f, 0.0f);
+
+        // Apply banking rotation
+        rlRotatef(bankAngle, 0.0f, 0.0f, 1.0f);
+
+        // Draw the temporary bird body
+        DrawCube(
+            { 0.0f, 0.0f, 0.0f },
+            1.2f, 0.5f, 2.0f,
+            RED
+        );
+
+        DrawCubeWires(
+            { 0.0f, 0.0f, 0.0f },
+            1.2f, 0.5f, 2.0f,
+            BLACK
+        );
+
+        // Draw the forward-facing indicator
+        DrawLine3D(
+            { 0.0f, 0.0f, 0.0f },
+            { 0.0f, 0.0f, -2.0f },
+            GREEN
+        );
+
+        DrawSphere(
+            { 0.0f, 0.0f, -2.0f },
+            0.12f,
+            GREEN
+        );
+
+        // Restore the previous transformation
+        rlPopMatrix();
+
+        // End rendering the 3D world
         EndMode3D();
 
-        // Draw interface
+        // Draw the interface
         DrawText("RetroBIRD Engine", 20, 20, 20, BLACK);
         DrawText("W/S: Pitch", 20, 50, 18, DARKGRAY);
         DrawText("A/D: Turn", 20, 75, 18, DARKGRAY);
@@ -129,6 +191,8 @@ int main()
         EndDrawing();
     }
 
+    // Shut down the application
     CloseWindow();
+
     return 0;
 }
